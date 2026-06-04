@@ -1,4 +1,4 @@
-const TMDB_KEY = 'bbf5fb3d0fdba51a15081feef6abdd2b';
+const TMDB_KEY = process.env.REACT_APP_TMDB_KEY;
 const PROXY = 'https://corsproxy.io/?';
 const BASE = 'https://api.themoviedb.org/3';
 
