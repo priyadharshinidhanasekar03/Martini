@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import TimeMachine from './pages/TimeMachine';
 import TonightQuiz from './pages/TonightQuiz';
 import Discover from './pages/Discover';
+import Discussion from './pages/Discussion';
 
 function App() {
   const [tab, setTab] = useState('home');
@@ -12,10 +13,11 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Header tab={tab} setTab={setTab} />
-      {tab === 'home'     && <Home setTab={setTab} />}
-      {tab === 'time'     && <TimeMachine />}
-      {tab === 'tonight'  && <TonightQuiz />}
-      {tab === 'discover' && <Discover />}
+      {tab === 'home'       && <Home setTab={setTab} />}
+      {tab === 'time'       && <TimeMachine />}
+      {tab === 'tonight'    && <TonightQuiz />}
+      {tab === 'discover'   && <Discover />}
+      {tab === 'discussion' && <Discussion />}
     </div>
   );
 }

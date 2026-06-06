@@ -11,18 +11,17 @@ function ActorUniverse() {
   const [loading, setLoading] = useState(false);
 
   async function handleSearch(e) {
-    setSearch(e.target.value);
-    if (e.target.value.length < 2) { setResults([]); return; }
-    try {
-      const PROXY = 'https://corsproxy.io/?';
-      const url = `https://api.themoviedb.org/3/search/person?api_key=bbf5fb3d0fdba51a15081feef6abdd2b&query=${encodeURIComponent(e.target.value)}&page=1`;
-      const res = await fetch(PROXY + encodeURIComponent(url));
-      const data = await res.json();
-      setResults((data.results || [])
-        .filter(p => p.known_for_department === 'Acting')
-        .slice(0, 4));
-    } catch (err) { console.error(err); }
-  }
+  setSearch(e.target.value);
+  if (e.target.value.length < 2) { setResults([]); return; }
+  try {
+    const PROXY = 'https://corsproxy.io/?';
+    const url = `https://api.themoviedb.org/3/search/person?api_key=bbf5fb3d0fdba51a15081feef6abdd2b&query=${encodeURIComponent(e.target.value)}&page=1&include_adult=false`;
+    const res = await fetch(PROXY + encodeURIComponent(url));
+    const data = await res.json();
+    console.log('Actor search results:', data);
+    setResults((data.results || []).slice(0, 4));
+  } catch (err) { console.error('Actor search error:', err); }
+}
 
   async function selectActor(person) {
     setActor(person);

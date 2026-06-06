@@ -39,21 +39,32 @@ const styles = {
   },
 };
 const tabs = [
-  { id: 'home',     label: 'Home' },
-  { id: 'time',     label: 'Time Machine' },
-  { id: 'tonight',  label: 'Tonight' },
-  { id: 'discover', label: 'Discover' },
+  { id: 'home',       label: 'Home' },
+  { id: 'time',       label: 'Time Machine' },
+  { id: 'tonight',    label: 'Tonight' },
+  { id: 'discover',   label: 'Discover' },
+  { id: 'discussion', label: 'Discussion' },
 ];
 function Header({ tab, setTab }) {
   return (
     <header style={styles.header}>
       <div style={styles.logo} onClick={() => setTab('home')}>
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <polygon points="16,3 29,26 3,26" stroke="#c9a84c" strokeWidth="1.2" fill="none"/>
-          <line x1="16" y1="26" x2="16" y2="31" stroke="#c9a84c" strokeWidth="1.2"/>
-          <line x1="11" y1="31" x2="21" y2="31" stroke="#c9a84c" strokeWidth="1.2"/>
-          <circle cx="16" cy="15" r="1.8" fill="#c9a84c"/>
-        </svg>
+        <svg width="36" height="28" viewBox="0 0 36 28" fill="none">
+  {/* Film strip body */}
+  <rect x="1" y="4" width="34" height="20" rx="1.5" stroke="#c9a84c" strokeWidth="1.2" fill="none"/>
+  {/* Center frame */}
+  <rect x="11" y="7" width="14" height="14" rx="0.5" stroke="#c9a84c" strokeWidth="1" fill="rgba(201,168,76,0.08)"/>
+  {/* Left sprocket holes */}
+  <rect x="3.5" y="7" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  <rect x="3.5" y="12" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  <rect x="3.5" y="17" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  {/* Right sprocket holes */}
+  <rect x="28.5" y="7" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  <rect x="28.5" y="12" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  <rect x="28.5" y="17" width="4" height="3.5" rx="0.5" fill="#c9a84c" opacity="0.7"/>
+  {/* Play button in center frame */}
+  <polygon points="15,10.5 15,17.5 22,14" fill="#c9a84c" opacity="0.9"/>
+</svg>
         <div>
           <div style={styles.logoText}>Martini</div>
           <div style={styles.logoSub}>For people who take cinema seriously</div>
