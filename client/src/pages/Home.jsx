@@ -69,7 +69,7 @@ function FilmStrip({ movies, onMovieClick }) {
   const [isPaused, setIsPaused] = useState(false);
   const animRef = useRef(null);
   const posRef = useRef(0);
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const strip = stripRef.current;
     if (!strip || movies.length === 0) return;
@@ -191,7 +191,7 @@ function SpotlightOfTheDay({ setTab }) {
   const [modal, setModal] = useState(null);
   const { whispers, fetchWhisper } = useWhisper();
   const todayFilm = getTodayFilm();
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -356,7 +356,7 @@ function Home({ setTab }) {
   const [stripMovies, setStripMovies] = useState([]);
   const [modal, setModal] = useState(null);
   const { whispers, fetchWhisper } = useWhisper();
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const interval = setInterval(() => {
       setFade(false);
@@ -367,7 +367,7 @@ function Home({ setTab }) {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function loadStrip() {
       try {

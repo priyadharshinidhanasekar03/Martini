@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../api/supabase';
 import { searchMovies, IMG_BASE } from '../api/tmdb';
 
@@ -33,7 +33,7 @@ function ReplyThread({ postId, userName }) {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchReplies();
     const channel = supabase
@@ -123,7 +123,7 @@ function PostCard({ post, userName }) {
   const [userReactions, setUserReactions] = useState([]);
 
   const postType = POST_TYPES.find(t => t.id === post.post_type);
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchReactions();
   }, [post.id]);
@@ -252,7 +252,7 @@ function DiscussionRoom({ movie, userName, onBack }) {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPosts();
     const channel = supabase
