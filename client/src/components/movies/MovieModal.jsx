@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { IMG_BASE } from '../../api/tmdb';
+import {
+  IMG_BASE,
+  getMovieDetails,
+  getMovieVideos,
+  getWatchProviders,
+} from '../../api/tmdb';
 
-const PROXY = 'https://corsproxy.io/?';
-const TMDB_KEY = 'bbf5fb3d0fdba51a15081feef6abdd2b';
-
-// Streaming platform URLs
 const PLATFORM_URLS = {
   'Netflix': 'https://www.netflix.com/search?q=',
   'Amazon Prime Video': 'https://www.amazon.com/s?k=',
@@ -28,76 +29,53 @@ const PLATFORM_URLS = {
 function getPlatformUrl(providerName, movieTitle) {
   const url = PLATFORM_URLS[providerName];
   if (url) return `${url}${encodeURIComponent(movieTitle)}`;
-  // Fallback: Google search for any unknown platform
   return `https://www.google.com/search?q=watch+${encodeURIComponent(movieTitle)}+on+${encodeURIComponent(providerName)}`;
-}
-
-async function fetchMovieDetails(id) {
-  const url = `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}`;
-  const res = await fetch(PROXY + encodeURIComponent(url));
-  return res.json();
-}
-
-async function fetchTrailer(id) {
-  try {
-    const url = `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_KEY}`;
-
-    // Try direct fetch first (no proxy)
-    let data;
-    try {
-      const res = await fetch(url);
-      data = await res.json();
-    } catch {
-      // Direct failed, fall back to proxy
-      const res = await fetch(PROXY + encodeURIComponent(url));
-      data = await res.json();
-    }
-
-    const results = data.results || [];
-
-    // Prefer official Trailer on YouTube
-    const trailer = results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-    // Fallback: any YouTube video (Teaser, Clip, Featurette, etc.)
-    const fallback = results.find(v => v.site === 'YouTube');
-
-    return trailer?.key || fallback?.key || null;
-  } catch (err) {
-    console.error('fetchTrailer failed:', err);
-    return null;
-  }
-}
-
-async function fetchProviders(id) {
-  const url = `https://api.themoviedb.org/3/movie/${id}/watch/providers?api_key=${TMDB_KEY}`;
-  const res = await fetch(PROXY + encodeURIComponent(url));
-  const data = await res.json();
-  return data.results?.IN || data.results?.US || {};
 }
 
 function MovieModal({ movie, whisper, onClose }) {
   const [details, setDetails] = useState(null);
   const [trailerKey, setTrailerKey] = useState(null);
   const [providers, setProviders] = useState([]);
+  const [providerType, setProviderType] = useState('');
   const [showTrailer, setShowTrailer] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!movie) return;
+    let cancelled = false;
+
     setLoading(true);
     setShowTrailer(false);
     setTrailerKey(null);
     setProviders([]);
+    setProviderType('');
+    setDetails(null);
 
     Promise.all([
-      fetchMovieDetails(movie.id),
-      fetchTrailer(movie.id),
-      fetchProviders(movie.id),
-    ]).then(([det, trailer, prov]) => {
+      getMovieDetails(movie.id).catch(() => null),
+      getMovieVideos(movie.id).catch(() => []),
+      getWatchProviders(movie.id).catch(() => ({})),
+    ]).then(([det, videos, prov]) => {
+      if (cancelled) return;
+
+      const trailer =
+        videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
+        videos.find((v) => v.site === 'YouTube');
+
+      let list = [];
+      let type = '';
+      if (prov.flatrate?.length) { list = prov.flatrate; type = 'Stream'; }
+      else if (prov.rent?.length) { list = prov.rent; type = 'Rent'; }
+      else if (prov.buy?.length) { list = prov.buy; type = 'Buy'; }
+
       setDetails(det);
-      setTrailerKey(trailer);
-      setProviders(prov.flatrate || []);
+      setTrailerKey(trailer?.key || null);
+      setProviders(list);
+      setProviderType(type);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    });
+
+    return () => { cancelled = true; };
   }, [movie]);
 
   if (!movie) return null;
@@ -113,7 +91,7 @@ function MovieModal({ movie, whisper, onClose }) {
       }}
     >
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',
@@ -122,7 +100,6 @@ function MovieModal({ movie, whisper, onClose }) {
           padding: '2.5rem', position: 'relative',
         }}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           style={{
@@ -131,8 +108,8 @@ function MovieModal({ movie, whisper, onClose }) {
             color: 'var(--muted)', fontSize: '1.2rem',
             cursor: 'pointer',
           }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--cream)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--cream)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--muted)')}
         >✕</button>
 
         {loading ? (
@@ -144,7 +121,6 @@ function MovieModal({ movie, whisper, onClose }) {
           </div>
         ) : (
           <>
-            {/* Header */}
             <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
               {movie.poster_path && (
                 <img
@@ -164,10 +140,9 @@ function MovieModal({ movie, whisper, onClose }) {
                   {` · ★ ${movie.vote_average?.toFixed(1)}`}
                 </div>
 
-                {/* Genres */}
                 {details?.genres?.length > 0 && (
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                    {details.genres.map(g => (
+                    {details.genres.map((g) => (
                       <span key={g.id} style={{
                         background: 'rgba(201,168,76,0.08)',
                         border: '1px solid rgba(201,168,76,0.2)',
@@ -179,7 +154,6 @@ function MovieModal({ movie, whisper, onClose }) {
                   </div>
                 )}
 
-                {/* Whisper */}
                 {whisper && (
                   <div style={{
                     fontFamily: "'Cormorant Garamond', serif",
@@ -193,7 +167,6 @@ function MovieModal({ movie, whisper, onClose }) {
               </div>
             </div>
 
-            {/* Overview */}
             {movie.overview && (
               <p style={{
                 fontFamily: "'Cormorant Garamond', serif",
@@ -203,11 +176,10 @@ function MovieModal({ movie, whisper, onClose }) {
               }}>{movie.overview}</p>
             )}
 
-            {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
               {trailerKey ? (
                 <button
-                  onClick={() => setShowTrailer(s => !s)}
+                  onClick={() => setShowTrailer((s) => !s)}
                   style={{
                     background: showTrailer ? '#9b2335' : 'var(--gold)',
                     color: 'var(--bg)', border: 'none',
@@ -224,13 +196,11 @@ function MovieModal({ movie, whisper, onClose }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    background: 'var(--gold)',
-                    color: 'var(--bg)', border: 'none',
+                    background: 'var(--gold)', color: 'var(--bg)',
                     fontFamily: "'DM Mono', monospace",
                     fontSize: '0.68rem', letterSpacing: '0.18em',
                     textTransform: 'uppercase', padding: '0.75rem 1.5rem',
-                    cursor: 'pointer', fontWeight: 500,
-                    textDecoration: 'none', display: 'inline-block',
+                    fontWeight: 500, textDecoration: 'none', display: 'inline-block',
                   }}>
                   ▶ Search Trailer ↗
                 </a>
@@ -249,7 +219,6 @@ function MovieModal({ movie, whisper, onClose }) {
               </button>
             </div>
 
-            {/* Trailer */}
             {showTrailer && trailerKey && (
               <div style={{ marginBottom: '1.5rem' }}>
                 <iframe
@@ -262,18 +231,17 @@ function MovieModal({ movie, whisper, onClose }) {
               </div>
             )}
 
-            {/* Where to Watch */}
-            {providers.length > 0 && (
+            {providers.length > 0 ? (
               <div>
                 <div style={{
                   fontSize: '0.58rem', letterSpacing: '0.18em',
                   textTransform: 'uppercase', color: 'var(--muted)',
                   marginBottom: '0.75rem',
                 }}>
-                  Where to watch — tap to open
+                  Where to {providerType.toLowerCase()} — tap to open
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {providers.map(p => (
+                  {providers.map((p) => (
                     <a
                       key={p.provider_id}
                       href={getPlatformUrl(p.provider_name, movie.title)}
@@ -288,11 +256,11 @@ function MovieModal({ movie, whisper, onClose }) {
                         textDecoration: 'none', transition: 'all 0.2s',
                         cursor: 'pointer',
                       }}
-                      onMouseEnter={e => {
+                      onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = 'var(--gold)';
                         e.currentTarget.style.color = 'var(--gold)';
                       }}
-                      onMouseLeave={e => {
+                      onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = 'var(--border)';
                         e.currentTarget.style.color = 'var(--text)';
                       }}
@@ -309,14 +277,12 @@ function MovieModal({ movie, whisper, onClose }) {
                   ))}
                 </div>
               </div>
-            )}
-
-            {!trailerKey && providers.length === 0 && !loading && (
+            ) : (
               <div style={{
                 fontFamily: "'Cormorant Garamond', serif",
                 fontStyle: 'italic', color: 'var(--muted)', fontSize: '0.9rem',
               }}>
-                No streaming info available for this title.
+                No streaming info available for this title in your region.
               </div>
             )}
           </>
